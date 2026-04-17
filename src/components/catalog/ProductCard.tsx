@@ -15,7 +15,7 @@ type Props = {
 };
 
 export function ProductCard({ product, qty, dolar, onInc, onSetQty, onOpenDetail }: Props) {
-  const ref = useReveal<HTMLDivElement>(0.1);
+  const { ref, inView } = useReveal<HTMLDivElement>(0.1);
   const tier = getPriceTier(product, qty || 1, dolar);
   const subtotal = qty > 0 ? tier.unitARS * qty : product.retailARS;
 
@@ -24,6 +24,7 @@ export function ProductCard({ product, qty, dolar, onInc, onSetQty, onOpenDetail
       ref={ref}
       className={cn(
         "reveal group relative flex flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition-all duration-500",
+        inView && "in-view",
         "hover:shadow-lg hover:-translate-y-1 hover:border-foreground/15"
       )}
     >

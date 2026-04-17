@@ -1,5 +1,6 @@
 import { MessageCircle, Search, ShoppingBag } from "lucide-react";
 import { useReveal } from "@/hooks/useReveal";
+import { cn } from "@/lib/utils";
 
 const STEPS = [
   {
@@ -20,12 +21,15 @@ const STEPS = [
 ];
 
 export function HowToBuy() {
-  const ref = useReveal<HTMLElement>();
+  const { ref, inView } = useReveal<HTMLElement>();
   return (
     <section
       ref={ref}
       id="how"
-      className="reveal container-page py-16 sm:py-24 border-t border-border/60"
+      className={cn(
+        "reveal container-page py-16 sm:py-24 border-t border-border/60",
+        inView && "in-view",
+      )}
     >
       <div className="max-w-2xl">
         <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-3">

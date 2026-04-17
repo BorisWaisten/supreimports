@@ -9,6 +9,7 @@ export const PRODUCTS: Product[] = [
   {
     id: "vapeo-elfbar-ice-king",
     category: "VAPEO",
+    featured: true,
     name: "Elfbar Ice King 40k",
     image: "https://images.unsplash.com/photo-1567429472743-2eb52e8b3edd?w=600&q=80",
     retailARS: 30000,
@@ -29,6 +30,7 @@ export const PRODUCTS: Product[] = [
   {
     id: "vapeo-elfbar-bc-pro",
     category: "VAPEO",
+    featured: true,
     name: "Elfbar BC Pro 45k",
     image: "https://vape-island.com/cdn/shop/files/Elf_Bar_BC10000_Puffs_Disposable_Vape.png",
     retailARS: 34000,
@@ -95,6 +97,7 @@ export const PRODUCTS: Product[] = [
   {
     id: "apple-airpods-pro-2",
     category: "APPLE",
+    featured: true,
     name: "AirPods Pro 2",
     image: "https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?w=600&q=80",
     retailARS: 25000,
@@ -152,6 +155,7 @@ export const PRODUCTS: Product[] = [
   {
     id: "bazar-quencher",
     category: "BAZAR",
+    featured: true,
     name: "Vaso Quencher 1.2L",
     image: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=600&q=80",
     retailARS: 35000,
@@ -196,6 +200,7 @@ export const PRODUCTS: Product[] = [
   {
     id: "estetica-vs-bodysplash",
     category: "ESTÉTICA",
+    featured: true,
     name: "Body Splash VS Original",
     image: "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=600&q=80",
     retailARS: 32500,
@@ -213,6 +218,7 @@ export const PRODUCTS: Product[] = [
   {
     id: "tec-watch-ultra",
     category: "TECNOLOGÍA",
+    featured: true,
     name: "Reloj Ultra 7 Mallas",
     image: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&q=80",
     retailARS: 32000,

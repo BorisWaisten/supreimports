@@ -9,6 +9,8 @@ export type Product = {
   scales: Scale[];
   stockInfo: string;
   description?: string;
+  /** Marcado en sheet (featured / destacado) para hero y carrusel */
+  featured?: boolean;
 };
 
 export type CartItem = {

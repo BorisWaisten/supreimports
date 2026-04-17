@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { RefreshCw, AlertCircle } from "lucide-react";
 import { SiteHeader } from "@/components/catalog/SiteHeader";
 import { Hero } from "@/components/catalog/Hero";
+import { FeaturedCarousel } from "@/components/catalog/FeaturedCarousel";
 import { CategoryFilter } from "@/components/catalog/CategoryFilter";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { ProductDetail } from "@/components/catalog/ProductDetail";
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import { useDolar } from "@/hooks/useDolar";
 import { useProducts } from "@/hooks/useProducts";
+import { getFeaturedProducts } from "@/lib/featured";
 import type { Product } from "@/types/catalog";
 
 const Index = () => {
@@ -30,6 +32,15 @@ const Index = () => {
 
   const isLoading = status === "loading" && products.length === 0;
   const isDev = import.meta.env.DEV;
+
+  const featuredProducts = useMemo(
+    () => getFeaturedProducts(products, 16),
+    [products],
+  );
+  const heroShowcase = useMemo(
+    () => featuredProducts.slice(0, 4),
+    [featuredProducts],
+  );
 
   const grouped = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -63,7 +74,18 @@ const Index = () => {
       />
 
       <main className="flex-1">
-        <Hero />
+        <Hero
+          showcaseProducts={heroShowcase}
+          onOpenProduct={(p) => setDetail(p)}
+        />
+
+        <FeaturedCarousel
+          products={featuredProducts}
+          dolar={dolar}
+          getQty={cart.getQty}
+          onInc={cart.inc}
+          onOpenDetail={(p) => setDetail(p)}
+        />
 
         <CategoryFilter
           categories={categories}

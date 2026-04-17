@@ -54,6 +54,20 @@ function parseCSV(text: string): string[][] {
 }
 
 /** "3:15,5:14,10:13.5" → Scale[] */
+function headerIndex(headers: string[], keys: string[]): number {
+  for (const key of keys) {
+    const i = headers.indexOf(key.toLowerCase());
+    if (i >= 0) return i;
+  }
+  return -1;
+}
+
+function parseFeatured(raw: string | undefined): boolean {
+  if (!raw) return false;
+  const v = raw.trim().toLowerCase();
+  return ["1", "true", "yes", "y", "sí", "si", "x", "✓", "destacado", "highlight"].includes(v);
+}
+
 function parseScales(raw: string): Scale[] {
   if (!raw) return [];
   return raw
@@ -80,6 +94,7 @@ function rowsToProducts(rows: string[][]): Product[] {
   const iScales = idx("scales");
   const iStock = idx("stockinfo");
   const iDesc = idx("description");
+  const iFeatured = headerIndex(headers, ["featured", "destacado", "highlight"]);
 
   return rows
     .slice(1)
@@ -87,6 +102,9 @@ function rowsToProducts(rows: string[][]): Product[] {
       const id = (r[iId] ?? "").trim();
       const name = (r[iName] ?? "").trim();
       if (!id || !name) return null;
+      const featured =
+        iFeatured >= 0 ? parseFeatured(r[iFeatured] ?? undefined) : false;
+
       return {
         id,
         category: (r[iCat] ?? "").trim() || "OTROS",
@@ -96,6 +114,7 @@ function rowsToProducts(rows: string[][]): Product[] {
         scales: parseScales(r[iScales] ?? ""),
         stockInfo: (r[iStock] ?? "").trim(),
         description: (r[iDesc] ?? "").trim() || undefined,
+        ...(featured ? { featured: true } : {}),
       };
     })
     .filter((p): p is Product => p !== null);
