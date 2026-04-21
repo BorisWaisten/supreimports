@@ -1,6 +1,6 @@
 import type { Product, Scale } from "@/types/catalog";
 
-export const SHEET_ID = "1EOVPqSQ5Y3rcKUu5hB2dfdJB7zf3Nx6dldXr7a_A8fA";
+export const SHEET_ID = import.meta.env.VITE_SHEET_ID;
 const CACHE_KEY = "supre_products_cache_v2";
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 min
 const PLACEHOLDER_IMAGE =
