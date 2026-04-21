@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { RefreshCw, AlertCircle } from "lucide-react";
 import { SiteHeader } from "@/components/catalog/SiteHeader";
 import { Hero } from "@/components/catalog/Hero";
@@ -18,12 +18,28 @@ import { useProducts } from "@/hooks/useProducts";
 import { getFeaturedProducts } from "@/lib/featured";
 import type { Product } from "@/types/catalog";
 
+
+function normalize(text: string) {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 const Index = () => {
-  const [dolar, setDolar] = useDolar();
-  const [search, setSearch] = useState("");
+  const { dolar, refetchCotizacion } = useDolar();
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [detail, setDetail] = useState<Product | null>(null);
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput), 500);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+  
+  const deferredSearch = useDeferredValue(search);
 
   const { products, categories, status, error, usedFallback, refresh } =
     useProducts();
@@ -42,33 +58,41 @@ const Index = () => {
     [featuredProducts],
   );
 
-  const grouped = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const filtered = products.filter((p) => {
+  const filtered = useMemo(() => {
+    const q = normalize(deferredSearch.trim());
+  
+    if (!q && !activeCat) return products;
+  
+    return products.filter((p) => {
       if (activeCat && p.category !== activeCat) return false;
-      if (
-        q &&
-        !p.name.toLowerCase().includes(q) &&
-        !p.category.toLowerCase().includes(q)
-      )
-        return false;
-      return true;
+  
+      if (!q) return true;
+  
+      return (
+        normalize(p.name).includes(q) ||
+        normalize(p.category).includes(q) ||
+        normalize(p.description || "").includes(q)
+      );
     });
+  }, [products, deferredSearch, activeCat]);
+  
+  const grouped = useMemo(() => {
     const map = new Map<string, Product[]>();
+  
     filtered.forEach((p) => {
       if (!map.has(p.category)) map.set(p.category, []);
       map.get(p.category)!.push(p);
     });
+  
     return Array.from(map.entries());
-  }, [search, activeCat, products]);
+  }, [filtered]);
 
   return (
     <div id="top" className="min-h-screen flex flex-col bg-background">
       <SiteHeader
         dolar={dolar}
-        setDolar={setDolar}
         search={search}
-        setSearch={setSearch}
+        setSearch={setSearchInput}
         cartCount={totals.totalUnits}
         onOpenCart={() => setCartOpen(true)}
       />
@@ -97,43 +121,7 @@ const Index = () => {
           id="catalog"
           className="container-page py-10 sm:py-14 space-y-14 pb-32"
         >
-          {(error || isDev) && !isLoading && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/40 px-4 py-3">
-              <div className="flex items-center gap-2 text-sm">
-                {error ? (
-                  <>
-                    <AlertCircle className="h-4 w-4 text-destructive" />
-                    <span className="text-muted-foreground">{error}</span>
-                  </>
-                ) : (
-                  <span className="text-muted-foreground">
-                    {usedFallback
-                      ? "Mostrando datos locales"
-                      : `Conectado a Google Sheets · ${products.length} productos`}
-                  </span>
-                )}
-              </div>
-              {isDev && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => refresh()}
-                  disabled={status === "loading"}
-                  className="gap-2"
-                >
-                  <RefreshCw
-                    className={`h-3.5 w-3.5 ${
-                      status === "loading" ? "animate-spin" : ""
-                    }`}
-                  />
-                  Recargar productos
-                </Button>
-              )}
-            </div>
-          )}
-
           {isLoading && <ProductGridSkeleton count={8} />}
-
           {!isLoading && grouped.length === 0 && (
             <div className="text-center py-20">
               <p className="font-display text-xl font-semibold">Sin resultados</p>
@@ -142,7 +130,6 @@ const Index = () => {
               </p>
             </div>
           )}
-
           {!isLoading &&
             grouped.map(([cat, items]) => (
               <div key={cat}>

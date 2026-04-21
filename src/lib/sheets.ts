@@ -1,17 +1,14 @@
 import type { Product, Scale } from "@/types/catalog";
 
-const SHEET_ID = "1EOVPqSQ5Y3rcKUu5hB2dfdJB7zf3Nx6dldXr7a_A8fA";
-const CACHE_KEY = "supre_products_cache_v1";
+export const SHEET_ID = "1EOVPqSQ5Y3rcKUu5hB2dfdJB7zf3Nx6dldXr7a_A8fA";
+const CACHE_KEY = "supre_products_cache_v2";
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 min
-
-const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Productos`;
-// Fallback al primer sheet si "Productos" no existe
+const PLACEHOLDER_IMAGE =
+  "https://placehold.co/800x800/f5f5f5/999?text=SUPRE";
+const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=0`;
 const GVIZ_URL_FALLBACK = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
-
 type CacheEntry = { ts: number; data: Product[] };
-
-/** Parser mínimo de CSV con soporte para campos entre comillas. */
-function parseCSV(text: string): string[][] {
+export function parseSpreadsheetCSV(text: string): string[][] {
   const rows: string[][] = [];
   let cur: string[] = [];
   let field = "";
@@ -83,41 +80,61 @@ function parseScales(raw: string): Scale[] {
 
 function rowsToProducts(rows: string[][]): Product[] {
   if (rows.length < 2) return [];
+
   const headers = rows[0].map((h) => h.trim().toLowerCase());
-  const idx = (key: string) => headers.indexOf(key.toLowerCase());
 
-  const iId = idx("id");
-  const iCat = idx("category");
-  const iName = idx("name");
-  const iImage = idx("image");
-  const iRetail = idx("retailars");
-  const iScales = idx("scales");
-  const iStock = idx("stockinfo");
-  const iDesc = idx("description");
-  const iFeatured = headerIndex(headers, ["featured", "destacado", "highlight"]);
+  const findIndex = (name: string) =>
+    headers.findIndex((h) => h.includes(name.toLowerCase()));
 
-  return rows
-    .slice(1)
-    .map((r): Product | null => {
-      const id = (r[iId] ?? "").trim();
-      const name = (r[iName] ?? "").trim();
-      if (!id || !name) return null;
-      const featured =
-        iFeatured >= 0 ? parseFeatured(r[iFeatured] ?? undefined) : false;
+  const iId = findIndex("id");
+  const iName = findIndex("nombre");
+  const iCat = findIndex("tipo");
+  const iBase = findIndex("preciobase");
+  const iStock = findIndex("stock");
+  const iEstado = findIndex("estado");
+  const iFeatured = findIndex("featured");
 
-      return {
-        id,
-        category: (r[iCat] ?? "").trim() || "OTROS",
-        name,
-        image: (r[iImage] ?? "").trim(),
-        retailARS: Number((r[iRetail] ?? "0").replace(/[^\d.-]/g, "")) || 0,
-        scales: parseScales(r[iScales] ?? ""),
-        stockInfo: (r[iStock] ?? "").trim(),
-        description: (r[iDesc] ?? "").trim() || undefined,
-        ...(featured ? { featured: true } : {}),
-      };
-    })
-    .filter((p): p is Product => p !== null);
+  // Detectar dinámicamente columnas PrecioCant
+  const scaleColumns = headers
+    .map((h, i) => ({ h, i }))
+    .filter((col) => col.h.includes("preciocant"));
+
+  return rows.slice(1).map((r): Product | null => {
+    const id = (r[iId] ?? "").trim();
+    const name = (r[iName] ?? "").trim();
+
+    if (!id || !name) return null;
+
+    // 🔥 Construcción automática de escalas
+    const scales: Scale[] = scaleColumns
+      .map(({ h, i }) => {
+        const match = h.match(/\d+/); // extrae el número (3,5,10...)
+        const min = match ? Number(match[0]) : 0;
+        const price = Number((r[i] ?? "").replace(/[^\d.-]/g, ""));
+
+        if (!min || !price) return null;
+        return { min, price };
+      })
+      .filter((s): s is Scale => s !== null);
+
+    return {
+      id,
+      name,
+      category: (r[iCat] ?? "").trim() || "OTROS",
+      image: PLACEHOLDER_IMAGE,
+
+      // ⚠️ este es el precio base (lo estás usando como retail)
+      retailARS:
+        Number((r[iBase] ?? "0").replace(/[^\d.-]/g, "")) || 0,
+
+      scales,
+      stockInfo: `${r[iStock] ?? ""} - ${r[iEstado] ?? ""}`,
+
+      ...(iFeatured >= 0 && parseFeatured(r[iFeatured])
+        ? { featured: true }
+        : {}),
+    };
+  }).filter((p): p is Product => p !== null);
 }
 
 function readCache(): Product[] | null {
@@ -174,7 +191,7 @@ export async function fetchProductsFromSheet(
     csv = await fetchCSV(GVIZ_URL_FALLBACK);
   }
 
-  const rows = parseCSV(csv);
+  const rows = parseSpreadsheetCSV(csv);
   const products = rowsToProducts(rows);
   if (products.length > 0) writeCache(products);
   return products;

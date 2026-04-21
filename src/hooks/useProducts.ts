@@ -5,6 +5,7 @@ import { clearProductsCache, fetchProductsFromSheet } from "@/lib/sheets";
 
 type Status = "idle" | "loading" | "success" | "error";
 
+
 export function useProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [status, setStatus] = useState<Status>("loading");

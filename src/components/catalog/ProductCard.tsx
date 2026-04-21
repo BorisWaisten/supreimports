@@ -83,7 +83,9 @@ export function ProductCard({ product, qty, dolar, onInc, onSetQty, onOpenDetail
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
               {qty > 0
                 ? `${qty} u · ${tier.isWholesale ? `U$D ${tier.unitUSD}` : "Minorista"}`
-                : `Desde ${formatARS(product.scales[product.scales.length - 1].price * dolar)} mayorista`}
+                : product.scales.length > 0 ? 
+                `Desde ${formatARS(product.scales[product.scales.length - 1].price * dolar)} mayorista` 
+                : "Consultá escala"}
             </p>
           </div>
         </div>

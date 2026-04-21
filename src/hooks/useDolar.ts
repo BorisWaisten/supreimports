@@ -1,30 +1,28 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
-const KEY = "supre-dolar-v1";
-const DEFAULT = 1420;
+import {
+  DEFAULT_COTIZACION,
+  clearCotizacionCache,
+  fetchCotizacionUSD,
+} from "@/lib/dolarSheet";
 
 export function useDolar() {
-  const [dolar, setDolar] = useState<number>(DEFAULT);
+  const [dolar, setDolar] = useState<number>(DEFAULT_COTIZACION);
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) {
-        const v = parseFloat(raw);
-        if (!Number.isNaN(v) && v > 0) setDolar(v);
-      }
-    } catch {
-      /* noop */
-    }
+    let cancelled = false;
+    const force = reloadToken > 0;
+    fetchCotizacionUSD(force).then((v) => {
+      if (!cancelled) setDolar(v);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadToken]);
+  const refetchCotizacion = useCallback(() => {
+    clearCotizacionCache();
+    setReloadToken((t) => t + 1);
   }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(KEY, String(dolar));
-    } catch {
-      /* noop */
-    }
-  }, [dolar]);
-
-  return [dolar, setDolar] as const;
+  return { dolar, refetchCotizacion };
 }
