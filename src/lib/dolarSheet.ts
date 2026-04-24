@@ -1,7 +1,7 @@
 import { SHEET_ID, parseSpreadsheetCSV } from "@/lib/sheets";
 export const DEFAULT_COTIZACION = 1420;
 const CACHE_KEY = "supre_cotizacion_cache_v1";
-const CACHE_TTL_MS = 10 * 60 * 1000;
+const CACHE_TTL_MS = 5 * 60 * 1000;
 type CacheEntry = { ts: number; value: number };
 function parseMoneyCell(raw: string | undefined): number {
   if (!raw) return NaN;

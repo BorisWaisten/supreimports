@@ -41,7 +41,7 @@ export function ProductDetail({
           w-full h-[100dvh]
           max-w-none
           sm:max-w-3xl sm:h-auto
-          p-0 overflow-hidden
+          p-0 overflow-y-auto sm:overflow-hidden
           rounded-none sm:rounded-3xl
         "
       >

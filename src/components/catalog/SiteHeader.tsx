@@ -1,4 +1,4 @@
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatUSD } from "@/lib/pricing";
@@ -9,12 +9,14 @@ type Props = {
   setSearch: (s: string) => void;
   cartCount: number;
   onOpenCart: () => void;
+  onRefreshDolar: () => void;
 };
 
 export function SiteHeader({
   dolar,
   cartCount,
   onOpenCart,
+  onRefreshDolar,
 }: Props) {
   return (
     <header className="sticky top-0 z-40 glass border-b border-border/60">
@@ -35,6 +37,15 @@ export function SiteHeader({
           <span className="text-sm font-bold tabular-nums">
             {formatUSD(dolar)}
           </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0"
+            onClick={onRefreshDolar}
+            aria-label="Actualizar cotización USD"
+          >
+            <RefreshCw className="h-3 w-3" />
+          </Button>
         </div>
 
         {/* Cart */}

@@ -95,6 +95,7 @@ const Index = () => {
         setSearch={setSearchInput}
         cartCount={totals.totalUnits}
         onOpenCart={() => setCartOpen(true)}
+        onRefreshDolar={refetchCotizacion}
       />
 
       <main className="flex-1">
