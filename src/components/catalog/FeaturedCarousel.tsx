@@ -121,7 +121,7 @@ function FeaturedSlide({
         aria-label={`Ver ${product.name}`}
       >
         <img
-          src={product.image}
+          src={product.url}
           alt=""
           loading="lazy"
           onError={(e) => {

@@ -5,6 +5,7 @@ export type Product = {
   category: string;
   name: string;
   image: string;
+  url: string;
   retailARS: number;
   scales: Scale[];
   stockInfo: string;

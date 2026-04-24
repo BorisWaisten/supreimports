@@ -93,6 +93,7 @@ function rowsToProducts(rows: string[][]): Product[] {
   const iStock = findIndex("stock");
   const iEstado = findIndex("estado");
   const iFeatured = findIndex("featured");
+  const iUrl = findIndex("url");
 
   // Detectar dinámicamente columnas PrecioCant
   const scaleColumns = headers
@@ -122,6 +123,7 @@ function rowsToProducts(rows: string[][]): Product[] {
       name,
       category: (r[iCat] ?? "").trim() || "OTROS",
       image: PLACEHOLDER_IMAGE,
+      url: (r[iUrl] ?? "").trim() || "",
 
       // ⚠️ este es el precio base (lo estás usando como retail)
       retailARS:
@@ -133,6 +135,7 @@ function rowsToProducts(rows: string[][]): Product[] {
       ...(iFeatured >= 0 && parseFeatured(r[iFeatured])
         ? { featured: true }
         : {}),
+      ...(iUrl >= 0 && r[iUrl] ? { url: r[iUrl] } : {}),
     };
   }).filter((p): p is Product => p !== null);
 }

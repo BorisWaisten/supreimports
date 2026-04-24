@@ -117,7 +117,7 @@ function HeroShowcase({
             aria-label={`Ver ${p.name}`}
           >
             <img
-              src={p.image}
+              src={p.url}
               alt=""
               loading="lazy"
               onError={(e) => {
@@ -150,7 +150,7 @@ function HeroShowcase({
           >
             <div className="aspect-square w-full">
               <img
-                src={p.image}
+                src={p.url}
                 alt=""
                 loading="lazy"
                 onError={(e) => {

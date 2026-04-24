@@ -82,7 +82,7 @@ export function CartDrawer({
                 {lines.map(({ item, product, tier, subtotal }) => (
                   <li key={product.id} className="px-6 py-4 flex gap-3">
                     <img
-                      src={product.image}
+                      src={product.url}
                       alt=""
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src =

@@ -35,7 +35,7 @@ export function ProductCard({ product, qty, dolar, onInc, onSetQty, onOpenDetail
         aria-label={`Ver detalles de ${product.name}`}
       >
         <img
-          src={product.image}
+          src={product.url}
           alt={product.name}
           loading="lazy"
           onError={(e) => {
