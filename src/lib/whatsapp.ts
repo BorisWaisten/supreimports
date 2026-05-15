@@ -1,8 +1,6 @@
 import type { CartItem, Product } from "@/types/catalog";
 import { formatARS, getPriceTier } from "@/lib/pricing";
 
-const WHATSAPP_NUMBER = "5491131512531";
-
 export function buildWhatsAppMessage(
   items: CartItem[],
   products: Product[],
@@ -36,6 +34,13 @@ export function buildWhatsAppMessage(
 }
 
 export function openWhatsApp(message: string) {
-  const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+  const rawNumber = String(import.meta.env.VITE_WHATSAPP_NUMBER ?? "");
+  const phone = rawNumber.replace(/\D/g, "");
+
+  if (!phone) {
+    throw new Error("WhatsApp number is not configured. Set VITE_WHATSAPP_NUMBER in .env.");
+  }
+
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
   window.open(url, "_blank", "noopener,noreferrer");
 }
