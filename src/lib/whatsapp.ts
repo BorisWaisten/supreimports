@@ -5,10 +5,23 @@ export function buildWhatsAppMessage(
   items: CartItem[],
   products: Product[],
   dolar: number,
-  totalARS: number
+  totalARS: number,
+  buyerName?: string,
+  buyerPhone?: string,
+  shipping?: string
 ): string {
   const lines: string[] = [];
   lines.push("*PEDIDO · SUPRE IMPORTS*");
+  lines.push("");
+  if (buyerName) {
+    lines.push(`*Cliente:* ${buyerName}`);
+  }
+  if (buyerPhone) {
+    lines.push(`*Teléfono:* ${buyerPhone}`);
+  }
+  if (shipping) {
+    lines.push(`*Envío:* ${shipping}`);
+  }
   lines.push("");
   lines.push(`_Cotización del día: $${dolar.toLocaleString("es-AR")}_`);
   lines.push("");

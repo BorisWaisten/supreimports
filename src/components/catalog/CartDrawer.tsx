@@ -1,4 +1,5 @@
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -36,12 +37,31 @@ export function CartDrawer({
   onClear,
 }: Props) {
   const isEmpty = lines.length === 0;
+  const [buyerName, setBuyerName] = useState("");
+  const [buyerPhone, setBuyerPhone] = useState("");
+  const [shipping, setShipping] = useState("Andreani");
 
   const handleSend = () => {
     if (isEmpty) return;
+    if (!buyerName.trim()) {
+      toast.error("Ingresá nombre y apellido");
+      return;
+    }
+    if (!buyerPhone.trim()) {
+      toast.error("Ingresá un número de teléfono");
+      return;
+    }
     const items = lines.map((l) => l.item);
     const products = lines.map((l) => l.product);
-    const msg = buildWhatsAppMessage(items, products, dolar, totalARS);
+    const msg = buildWhatsAppMessage(
+      items,
+      products,
+      dolar,
+      totalARS,
+      buyerName.trim(),
+      buyerPhone.trim(),
+      shipping
+    );
     openWhatsApp(msg);
     toast.success("Abriendo WhatsApp…", { description: "Se generó tu pedido." });
   };
@@ -155,9 +175,44 @@ export function CartDrawer({
                   USD ${dolar.toLocaleString("es-AR")}
                 </p>
               </div>
-              <Button variant="whatsapp" size="lg" className="w-full" onClick={handleSend}>
-                Enviar pedido por WhatsApp
-              </Button>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Nombre y apellido</p>
+                  <input
+                    value={buyerName}
+                    onChange={(e) => setBuyerName(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm"
+                    placeholder="Ej. Juan Pérez"
+                  />
+                </div>
+
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Número de teléfono</p>
+                  <input
+                    value={buyerPhone}
+                    onChange={(e) => setBuyerPhone(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm"
+                    placeholder="Ej. +54 9 11 1234-5678"
+                  />
+                </div>
+
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Envíos</p>
+                  <select
+                    value={shipping}
+                    onChange={(e) => setShipping(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm bg-background"
+                  >
+                    <option>Andreani</option>
+                    <option>Retiro por oficina</option>
+                    <option>Moto mensajería</option>
+                  </select>
+                </div>
+
+                <Button variant="whatsapp" size="lg" className="w-full" onClick={handleSend}>
+                  Enviar pedido por WhatsApp
+                </Button>
+              </div>
               <p className="text-[10px] text-center text-muted-foreground">
                 Te redirigimos a WhatsApp con el pedido pre-cargado.
               </p>
