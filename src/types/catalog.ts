@@ -20,6 +20,14 @@ export type CartItem = {
   note: string;
 };
 
+export type CheckoutInfo = {
+  nombre: string;
+  telefono: string;
+  envio: string;
+  provincia: string;
+  tipoNegocio: string;
+};
+
 export type PriceTier = {
   unitUSD: number | null;
   unitARS: number;

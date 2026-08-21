@@ -1,4 +1,4 @@
-import type { CartItem, Product } from "@/types/catalog";
+import type { CartItem, CheckoutInfo, Product } from "@/types/catalog";
 import { formatARS, getPriceTier } from "@/lib/pricing";
 
 export function buildWhatsAppMessage(
@@ -6,22 +6,16 @@ export function buildWhatsAppMessage(
   products: Product[],
   dolar: number,
   totalARS: number,
-  buyerName?: string,
-  buyerPhone?: string,
-  shipping?: string
+  checkout: CheckoutInfo
 ): string {
   const lines: string[] = [];
   lines.push("*PEDIDO · SUPRE IMPORTS*");
   lines.push("");
-  if (buyerName) {
-    lines.push(`*Cliente:* ${buyerName}`);
-  }
-  if (buyerPhone) {
-    lines.push(`*Teléfono:* ${buyerPhone}`);
-  }
-  if (shipping) {
-    lines.push(`*Envío:* ${shipping}`);
-  }
+  lines.push(`*Nombre:* ${checkout.nombre}`);
+  lines.push(`*Teléfono:* ${checkout.telefono}`);
+  lines.push(`*Tipo de negocio:* ${checkout.tipoNegocio}`);
+  lines.push(`*Envío:* ${checkout.envio}`);
+  lines.push(`*Provincia/Barrio:* ${checkout.provincia}`);
   lines.push("");
   lines.push(`_Cotización del día: $${dolar.toLocaleString("es-AR")}_`);
   lines.push("");

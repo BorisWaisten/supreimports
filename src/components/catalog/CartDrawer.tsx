@@ -1,12 +1,17 @@
-import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { CartItem, Product } from "@/types/catalog";
 import { formatARS, getPriceTier } from "@/lib/pricing";
 import { buildWhatsAppMessage, openWhatsApp } from "@/lib/whatsapp";
+import { logOrderToSheet } from "@/lib/orderSheet";
+import { useCheckoutInfo } from "@/hooks/useCheckoutInfo";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 type Line = {
   item: CartItem;
@@ -26,6 +31,9 @@ type Props = {
   onClear: () => void;
 };
 
+const ENVIO_OPTIONS = ["Andreani", "Retiro por oficina", "Moto mensajería"];
+const NEGOCIO_OPTIONS = ["Kiosco", "E-commerce", "Bazar", "Mayorista", "Minorista"];
+
 export function CartDrawer({
   open,
   onOpenChange,
@@ -37,31 +45,49 @@ export function CartDrawer({
   onClear,
 }: Props) {
   const isEmpty = lines.length === 0;
-  const [buyerName, setBuyerName] = useState("");
-  const [buyerPhone, setBuyerPhone] = useState("");
-  const [shipping, setShipping] = useState("Andreani");
+  const [step, setStep] = useState<"cart" | "checkout">("cart");
+  const { info, update } = useCheckoutInfo();
+
+  useEffect(() => {
+    if (open) setStep("cart");
+  }, [open]);
+
+  const canSubmit = Boolean(
+    info.nombre.trim() &&
+    info.telefono.trim() &&
+    info.envio &&
+    info.provincia.trim() &&
+    info.tipoNegocio
+  );
 
   const handleSend = () => {
-    if (isEmpty) return;
-    if (!buyerName.trim()) {
-      toast.error("Ingresá nombre y apellido");
-      return;
-    }
-    if (!buyerPhone.trim()) {
-      toast.error("Ingresá un número de teléfono");
-      return;
-    }
+    if (isEmpty || !canSubmit) return;
+
+    const checkout = {
+      nombre: info.nombre.trim(),
+      telefono: info.telefono.trim(),
+      envio: info.envio,
+      provincia: info.provincia.trim(),
+      tipoNegocio: info.tipoNegocio,
+    };
+
     const items = lines.map((l) => l.item);
     const products = lines.map((l) => l.product);
-    const msg = buildWhatsAppMessage(
-      items,
-      products,
-      dolar,
+    const msg = buildWhatsAppMessage(items, products, dolar, totalARS, checkout);
+
+    const productosTexto = lines
+      .map(({ product, item, tier }) => `${product.name} x${item.qty} (ARS ${tier.unitARS})`)
+      .join(" | ");
+    const totalUSD = dolar > 0 ? Math.round((totalARS / dolar) * 100) / 100 : 0;
+
+    logOrderToSheet({
+      ...checkout,
+      productos: productosTexto,
       totalARS,
-      buyerName.trim(),
-      buyerPhone.trim(),
-      shipping
-    );
+      totalUSD,
+      cotizacion: dolar,
+    });
+
     openWhatsApp(msg);
     toast.success("Abriendo WhatsApp…", { description: "Se generó tu pedido." });
   };
@@ -73,12 +99,25 @@ export function CartDrawer({
         className="w-full sm:max-w-md p-0 flex flex-col gap-0 border-border"
       >
         <SheetHeader className="px-6 py-5 border-b border-border space-y-1">
+          {step === "checkout" && !isEmpty && (
+            <button
+              onClick={() => setStep("cart")}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors mb-1 -ml-0.5"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Volver al carrito
+            </button>
+          )}
           <SheetTitle className="font-display text-2xl tracking-tight flex items-center gap-2">
             <ShoppingBag className="h-5 w-5" />
-            Tu pedido
+            {step === "cart" ? "Tu pedido" : "Tus datos"}
           </SheetTitle>
           <SheetDescription className="text-xs">
-            {isEmpty ? "Aún no agregaste productos." : `${totalUnits} unidades · ${lines.length} producto${lines.length > 1 ? "s" : ""}`}
+            {isEmpty
+              ? "Aún no agregaste productos."
+              : step === "cart"
+              ? `${totalUnits} unidades · ${lines.length} producto${lines.length > 1 ? "s" : ""}`
+              : "Los necesitamos para coordinar tu pedido."}
           </SheetDescription>
         </SheetHeader>
 
@@ -95,7 +134,7 @@ export function CartDrawer({
               Seguir comprando
             </Button>
           </div>
-        ) : (
+        ) : step === "cart" ? (
           <>
             <ScrollArea className="flex-1">
               <ul className="divide-y divide-border">
@@ -175,44 +214,92 @@ export function CartDrawer({
                   USD ${dolar.toLocaleString("es-AR")}
                 </p>
               </div>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Nombre y apellido</p>
-                  <input
-                    value={buyerName}
-                    onChange={(e) => setBuyerName(e.target.value)}
-                    className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm"
-                    placeholder="Ej. Juan Pérez"
+              <Button variant="whatsapp" size="lg" className="w-full" onClick={() => setStep("checkout")}>
+                Continuar
+              </Button>
+              <p className="text-[10px] text-center text-muted-foreground">
+                Te pedimos algunos datos antes de enviar el pedido.
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            <ScrollArea className="flex-1">
+              <div className="px-6 py-5 space-y-5">
+                <div className="space-y-1.5">
+                  <Label htmlFor="co-nombre">Nombre y apellido</Label>
+                  <Input
+                    id="co-nombre"
+                    value={info.nombre}
+                    onChange={(e) => update({ nombre: e.target.value })}
+                    placeholder="Tu nombre"
                   />
                 </div>
 
-                <div>
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Número de teléfono</p>
-                  <input
-                    value={buyerPhone}
-                    onChange={(e) => setBuyerPhone(e.target.value)}
-                    className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm"
-                    placeholder="Ej. +54 9 11 1234-5678"
+                <div className="space-y-1.5">
+                  <Label htmlFor="co-telefono">Teléfono</Label>
+                  <Input
+                    id="co-telefono"
+                    value={info.telefono}
+                    onChange={(e) => update({ telefono: e.target.value })}
+                    placeholder="Ej: 11 2345 6789"
+                    inputMode="tel"
                   />
                 </div>
 
-                <div>
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Envíos</p>
-                  <select
-                    value={shipping}
-                    onChange={(e) => setShipping(e.target.value)}
-                    className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm bg-background"
-                  >
-                    <option>Andreani</option>
-                    <option>Retiro por oficina</option>
-                    <option>Moto mensajería</option>
-                  </select>
+                <div className="space-y-1.5">
+                  <Label htmlFor="co-provincia">Provincia / Barrio</Label>
+                  <Input
+                    id="co-provincia"
+                    value={info.provincia}
+                    onChange={(e) => update({ provincia: e.target.value })}
+                    placeholder="Ej: CABA - Palermo"
+                  />
                 </div>
 
-                <Button variant="whatsapp" size="lg" className="w-full" onClick={handleSend}>
-                  Enviar pedido por WhatsApp
-                </Button>
+                <div className="space-y-2">
+                  <Label>Tipo de envío</Label>
+                  <OptionChips
+                    options={ENVIO_OPTIONS}
+                    value={info.envio}
+                    onChange={(v) => update({ envio: v })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Tipo de negocio</Label>
+                  <OptionChips
+                    options={NEGOCIO_OPTIONS}
+                    value={info.tipoNegocio}
+                    onChange={(v) => update({ tipoNegocio: v })}
+                  />
+                </div>
               </div>
+            </ScrollArea>
+
+            <div className="border-t border-border bg-muted/20 px-6 py-5 space-y-4">
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                    Total estimado
+                  </p>
+                  <p className="font-display text-3xl font-bold tabular-nums leading-none mt-1">
+                    {formatARS(totalARS)}
+                  </p>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  USD ${dolar.toLocaleString("es-AR")}
+                </p>
+              </div>
+              <Button
+                variant="whatsapp"
+                size="lg"
+                className="w-full"
+                onClick={handleSend}
+                disabled={!canSubmit}
+              >
+                Enviar pedido por WhatsApp
+              </Button>
               <p className="text-[10px] text-center text-muted-foreground">
                 Te redirigimos a WhatsApp con el pedido pre-cargado.
               </p>
@@ -221,5 +308,35 @@ export function CartDrawer({
         )}
       </SheetContent>
     </Sheet>
+  );
+}
+
+function OptionChips({
+  options,
+  value,
+  onChange,
+}: {
+  options: string[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((opt) => (
+        <button
+          key={opt}
+          type="button"
+          onClick={() => onChange(opt)}
+          className={cn(
+            "rounded-full px-3.5 h-8 text-xs font-semibold transition-all duration-300 border",
+            value === opt
+              ? "bg-foreground text-background border-foreground"
+              : "bg-background text-muted-foreground border-border hover:border-foreground/30 hover:text-foreground"
+          )}
+        >
+          {opt}
+        </button>
+      ))}
+    </div>
   );
 }
